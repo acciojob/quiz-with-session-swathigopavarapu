@@ -1,7 +1,9 @@
-//your JS code here.
+// Get references
+const questionsElement = document.getElementById("questions");
+const submitBtn = document.getElementById("submit");
+const scoreDiv = document.getElementById("score");
 
-// Do not change code below this line
-// This code will just display the questions to the screen
+// Questions provided
 const questions = [
   {
     question: "What is the capital of France?",
@@ -30,77 +32,63 @@ const questions = [
   },
 ];
 
-const questionsElement = document.getElementById("questions");
-const submitBtn = document.getElementById("submit");
-const scoreDiv = document.getElementById("score");
+// Load saved answers (session)
+let userAnswers = JSON.parse(sessionStorage.getItem("progress")) || {};
 
-// Load saved progress (sessionStorage)
-let progress = JSON.parse(sessionStorage.getItem("progress")) || {};
-
-// Load saved score (localStorage)
+// Load saved score (local)
 const savedScore = localStorage.getItem("score");
 if (savedScore) {
   scoreDiv.textContent = `Your score is ${savedScore} out of ${questions.length}.`;
 }
 
-// Function to render quiz questions
+// Render quiz
 function renderQuestions() {
   questionsElement.innerHTML = "";
 
-  questions.forEach((q, index) => {
-    const questionDiv = document.createElement("div");
-
+  questions.forEach((q, i) => {
+    const div = document.createElement("div");
     const qText = document.createElement("p");
     qText.textContent = q.question;
-    questionDiv.appendChild(qText);
+    div.appendChild(qText);
 
     q.choices.forEach((choice) => {
       const label = document.createElement("label");
       const input = document.createElement("input");
-
       input.type = "radio";
-      input.name = `question-${index}`;
+      input.name = `question-${i}`;
       input.value = choice;
 
-      // Restore saved answers from sessionStorage
-      if (progress[`question-${index}`] === choice) {
+      // Restore checked state
+      if (userAnswers[i] === choice) {
         input.checked = true;
       }
 
-      // Save to sessionStorage when user selects an option
+      // On change, store progress in sessionStorage
       input.addEventListener("change", () => {
-        progress[`question-${index}`] = choice;
-        sessionStorage.setItem("progress", JSON.stringify(progress));
+        userAnswers[i] = choice;
+        sessionStorage.setItem("progress", JSON.stringify(userAnswers));
       });
 
       label.appendChild(input);
-      label.appendChild(document.createTextNode(choice));
-      questionDiv.appendChild(label);
+      label.append(choice);
+      div.appendChild(label);
+      div.appendChild(document.createElement("br"));
     });
 
-    questionsElement.appendChild(questionDiv);
+    questionsElement.appendChild(div);
   });
 }
 
-// Function to calculate and display the score
-function calculateScore() {
-  let score = 0;
-
-  questions.forEach((q, index) => {
-    const selected = progress[`question-${index}`];
-    if (selected === q.answer) {
-      score++;
-    }
-  });
-
-  scoreDiv.textContent = `Your score is ${score} out of ${questions.length}.`;
-
-  // Save final score to localStorage
-  localStorage.setItem("score", score);
-}
-
-// Handle quiz submission
-submitBtn.addEventListener("click", calculateScore);
-
-// Initial render
 renderQuestions();
+
+// On submit
+submitBtn.addEventListener("click", () => {
+  let score = 0;
+  questions.forEach((q, i) => {
+    if (userAnswers[i] === q.answer) score++;
+  });
+
+  // Show and store score
+  scoreDiv.textContent = `Your score is ${score} out of ${questions.length}.`;
+  localStorage.setItem("score", score);
+});
